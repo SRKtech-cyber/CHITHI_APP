@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="C.JPG" type="image/x-icon">
+    <title>Chithi App</title>
+    <style>
+        #background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            z-index: -1;
+        }
+        .container {
+            background-color: rgba(128, 128, 128, 0.8); /* 30% more opaque */
+            margin: 50px auto;
+            padding: 20px;
+            max-width: 600px;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+        }
+        .highlight {
+            background-color: yellow;
+            border-radius: 50%;
+        }
+        table {
+            width: 100%;
+        }
+        th {
+            color: white;
+        }
+        #best-thing-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        #best-thing {
+            flex: 1;
+            padding: 10px;
+            margin-right: 10px;
+        }
+        #set-button {
+            padding: 10px;
+            background-color: blue;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        #set-button:hover {
+            background-color: #333333;
+        }
+    </style>
+</head>
+<body>
+    <div id="background"></div>
+
+    <div class="container">
+     
+        <div id="greeting"></div>
+        <div id="day-percentage"></div>
+
+        <h2>Best Thing of the Day</h2>
+        <div id="best-thing-container">
+            <input type="text" id="best-thing" placeholder="Enter the best thing of today...">
+            <button id="set-button">Set</button>
+        </div>
+        
+        <h2>Simple Game</h2>
+        <p>Guess a number between 1 and 10:</p>
+        <input type="number" id="guess" min="1" max="10">
+        <button onclick="startGame()">Submit Guess</button>
+        <div id="game-result"></div>
+        
+        <h2>Month Calendar</h2>
+        <div id="calendar"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const backgroundImages = [
+                    'image1.jpg', 'image2.jpg', 'image3.jpg', 'image4.jpg', 'image5.jpg',
+                    'image6.jpg', 'image7.jpg', 'image8.jpg', 'image9.jpg', 'image10.jpg',
+                    'image11.jpg', 'image12.jpg', 'image13.jpg', 'image14.jpg', 'image15.jpg',
+                    'image16.jpg', 'image17.jpg', 'image18.jpg', 'image19.jpg', 'image20.jpg',
+                    'image21.jpg', 'image22.jpg', 'image23.jpg', 'image24.jpg', 'image25.jpg',
+                    'image26.jpg', 'image27.jpg', 'image28.jpg', 'image29.jpg', 'image30.jpg'
+                ];
+
+            const today = new Date();
+            const todayDate = today.getDate();
+            const todayKey = `${today.getFullYear()}-${today.getMonth() + 1}-${todayDate}`;
+
+            const setBackgroundImage = () => {
+                const imageIndex = todayDate % backgroundImages.length;
+                document.getElementById('background').style.backgroundImage = `url(${backgroundImages[imageIndex]})`;
+            };
+
+            const updateGreeting = () => {
+                const hours = today.getHours();
+                const greeting = hours < 12 ? 'Good Morning' : hours < 18 ? 'Good Afternoon' : 'Good Evening';
+                document.getElementById('greeting').textContent = `${greeting}, ${localStorage.getItem('userName')}!`;
+            };
+
+            const updateDayPercentage = () => {
+                const now = new Date();
+                const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+                const end = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+                const percentage = ((now - start) / (end - start)) * 100;
+                document.getElementById('day-percentage').textContent = `Day Progress: ${percentage.toFixed(2)}%`;
+            };
+
+            const generateCalendar = () => {
+                const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+                const calendarContainer = document.getElementById('calendar');
+                calendarContainer.innerHTML = '';
+
+                const month = today.getMonth();
+                const year = today.getFullYear();
+
+                const firstDay = new Date(year, month, 1).getDay();
+                const lastDate = new Date(year, month + 1, 0).getDate();
+
+                const table = document.createElement('table');
+                const headerRow = document.createElement('tr');
+                for (let i = 0; i < 7; i++) {
+                    const th = document.createElement('th');
+                    th.textContent = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][i];
+                    if (i === today.getDay()) th.classList.add('highlight');
+                    headerRow.appendChild(th);
+                }
+                table.appendChild(headerRow);
+
+                let date = 1;
+                for (let i = 0; i < 6; i++) {
+                    const row = document.createElement('tr');
+                    for (let j = 0; j < 7; j++) {
+                        const cell = document.createElement('td');
+                        if (i === 0 && j < firstDay) {
+                            cell.textContent = '';
+                        } else if (date > lastDate) {
+                            break;
+                        } else {
+                            cell.textContent = date;
+                            if (date === todayDate) cell.classList.add('highlight');
+                            date++;
+                        }
+                        row.appendChild(cell);
+                    }
+                    table.appendChild(row);
+                }
+
+                calendarContainer.appendChild(table);
+            };
+
+            const handleBestThing = () => {
+                const bestThingInput = document.getElementById('best-thing');
+                const storedBestThing = localStorage.getItem(todayKey);
+                if (storedBestThing) bestThingInput.value = storedBestThing;
+
+                document.getElementById('set-button').addEventListener('click', () => {
+                    const bestThing = bestThingInput.value;
+                    localStorage.setItem(todayKey, bestThing);
+                    sendBestThingToBackend(todayKey, bestThing);
+                });
+            };
+
+            const checkAndResetBestThing = () => {
+                const now = new Date();
+                const nextMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
+                const timeToMidnight = nextMidnight - now;
+
+                setTimeout(() => {
+                    localStorage.removeItem(todayKey);
+                    document.getElementById('best-thing').value = '';
+                    checkAndResetBestThing();
+                }, timeToMidnight);
+            };
+
+            const sendBestThingToBackend = (date, bestThing) => {
+                fetch('https://script.google.com/macros/s/AKfycbzdVm6fbU5gqC6dgsDz0gdvN5GOepWPeEFWvSmnoQZGFyAhr7r4UEaAh-7TsAGcyed6Mg/exec', {
+                    method: 'POST',
+                    body: new URLSearchParams({
+                        'your-name': localStorage.getItem('userName'),
+                        'best thing': `Date: ${date}, Best Thing: ${bestThing}`
+                    })
+                })
+                .then(response => response.json())
+                .then(data => console.log(data))
+                .catch(error => console.error('Error:', error));
+            };
+
+            const initializeUserName = () => {
+                if (!localStorage.getItem('userName')) {
+                    const userName = prompt("Please enter your name:");
+                    if (userName) {
+                        localStorage.setItem('userName', userName);
+                        updateGreeting();
+                    }
+                } else {
+                    updateGreeting();
+                }
+            };
+
+            setBackgroundImage();
+            updateDayPercentage();
+            generateCalendar();
+            handleBestThing();
+            checkAndResetBestThing();
+            initializeUserName();
+        });
+
+        function startGame() {
+            const guess = document.getElementById('guess').value;
+            const randomNumber = Math.floor(Math.random() * 10) + 1;
+            const result = (guess == randomNumber) ? "Congratulations! You guessed the right number." : `Try again! The correct number was ${randomNumber}.`;
+            document.getElementById('game-result').textContent = result;
+        }
+    </script>
+</body>
+</html>
